@@ -10,6 +10,7 @@ import { forgeClip } from '../src/forge/clip.js';
 import { buildCaptions } from '../src/forge/captions.js';
 import { PATHS, CFG } from '../src/core/config.js';
 import { log } from '../src/core/log.js';
+import { upsert } from '../src/core/store.js';
 
 function arg(name, def) {
   const i = process.argv.indexOf(`--${name}`);
@@ -26,7 +27,9 @@ async function main() {
   const render = arg('no-render', false) ? false : true;
   const captions = arg('no-captions', false) ? false : true;
 
+  const campaignId = arg('campaign', null) || null;
   const source = await ingest(src);
+  upsert('sources', { id: source.id, url: source.url, videoPath: source.videoPath, ingestedAt: new Date().toISOString() });
 
   const segs = await getTranscript(source);
   if (!segs) {
@@ -58,7 +61,14 @@ async function main() {
       try { forged = await forgeClip({ videoPath: source.videoPath, start: m.start, end: m.end, outPath, reframe, assPath }); }
       catch (e) { log.error('forge failed', { rank, err: e.message }); }
     }
-    manifest.clips.push({ rank: i + 1, ...m, file: forged ? outPath : null, dur: +(m.end - m.start).toFixed(2) });
+    const dur = +(m.end - m.start).toFixed(2);
+    manifest.clips.push({ rank: i + 1, ...m, file: forged ? outPath : null, dur });
+    upsert('clips', {
+      id: `${source.id}_${rank}`, sourceId: source.id, campaignId,
+      rank: i + 1, score: m.score, hook: m.hook, caption: m.caption,
+      start: m.start, end: m.end, dur, file: forged ? outPath : null,
+      createdAt: new Date().toISOString(),
+    });
   }
 
   const manifestPath = join(outDir, 'manifest.json');

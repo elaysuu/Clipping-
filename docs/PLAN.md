@@ -39,9 +39,10 @@ The money is in **campaign selection + clip quality + volume**, NOT account coun
 - **P1 Core engine ✅ DONE+verified:** Ingest → Transcript → Detect → Forge(+captions) → ready-to-post clips. 100% free, 0 risk.
 - **P2 Publisher + Reconciler:** auto-post 1 account × 3 platforms + view/payout tracking.
 - **P3 Careful replication ("army"):** Account Manager, gradual accounts w/ safety, more niches.
-- **P4 Control Dashboard (Elay's explicit ask 2026-06-26):** one universal UI to manage everything —
-  connected to EACH social account, full analytics/segmentation, control + edit + replay the data,
-  and post clips automatically from the interface. This is the final, manage-it-all layer.
+- **P4 Control Dashboard — LAST, deprioritized (Elay 2026-06-26):** focus is purely the backend/engine
+  until it is perfected; the project-specific dashboard is built only AFTER everything else is done.
+  Vision (for later): one universal UI connected to EACH account, analytics/segmentation, control +
+  edit + replay data, auto-post from the interface. **Do not build now.**
 
 ## Repo + public-readiness (Elay 2026-06-26)
 - Remote: `git@github.com:elaysuu/Clipping-.git` (Elay's dedicated repo). Push auth verified.
