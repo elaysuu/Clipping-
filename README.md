@@ -58,15 +58,29 @@ are git-ignored.
 ## Requirements
 `node >= 20`, `ffmpeg`, `yt-dlp`, and an OpenAI-compatible LLM endpoint.
 
-## Status
-- ✅ Engine: ingest → transcript (subs/Whisper) → LLM moment detection → vertical
-  forge with burned captions. Verified end-to-end.
-- ✅ Campaign Radar, JSON store spine, Publisher (dry-run), Payout Reconciler,
-  Orchestrator, unit tests.
-- ⏳ Live multi-account publishing (needs connected accounts), gradual account
-  management, and a project-specific control **Dashboard** (built last).
+## Dashboard
+A zero-dep, server-rendered local control panel (binds `127.0.0.1`):
+```bash
+CLIPFARM_VAULT_KEY=$(openssl rand -hex 32) npm run dashboard   # http://127.0.0.1:4317
+```
+- **Overview** — earnings/views KPIs, platforms, recent posts.
+- **Campaigns** — ROI-ranked board (sortable/filterable).
+- **Channels** — each page is its own topic/niche; per-channel **auto-matched
+  research feed** of fitting campaigns; plannable before connecting.
+- **Studio** — review/edit clip hooks & captions, approve/reject.
+- **Accounts** — paste a per-channel Client ID/Secret (→ encrypted vault,
+  fingerprint shown), OAuth-connect channels, live toggle.
+- **Publish** — account lanes, dry-run planner, gated live.
+- **Analytics** — segmented earnings, YouTube view sync.
 
-See `docs/PLAN.md`.
+## Status
+- ✅ Engine, Campaign Radar, store, Publisher (dry-run), Reconciler, Orchestrator.
+- ✅ Dashboard D1–D6 + credential vault (AES-256-GCM) + OAuth + per-channel topics.
+- ✅ 15 unit tests; key flows verified end-to-end + visually.
+- ⏳ Needs the operator: a Whop/Content-Rewards payout account and a Google Cloud
+  OAuth app per channel to connect real channels and enable live uploads.
+
+See `docs/PLAN.md` and `docs/dashboard-design-FINAL.md`.
 
 ## License
 Private / unreleased. Do not redistribute until a license is added.
