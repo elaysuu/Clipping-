@@ -30,10 +30,25 @@ source ─▶ ingest ─▶ transcript ─▶ detect moments ─▶ forge (9:16 
 
 ## Usage
 ```bash
-node bin/clip.js <url|file> [--top N] [--reframe fill|blur] [--no-captions]
+# 1. Rank a campaign board snapshot into ROI-ordered targets (records to store)
+node bin/radar.js [snapshot.md] [--min-remaining N] [--top N]
+
+# 2. Clip a source into ranked vertical clips (no publishing)
+node bin/clip.js <url|file> [--top N] [--reframe fill|blur] [--campaign ID] [--no-captions]
+
+# 3. Full backend run: source -> clips -> (dry-run) publish across platforms
+node bin/run.js <url|file> [--campaign ID] [--platforms youtube,tiktok,instagram] [--mode dry-run|live]
+
+# 4. One-glance report: clips made, posts, views, estimated earnings
+node bin/report.js
 ```
 Output: `data/clips/<source>/clip_NN.mp4` + `manifest.json` (rank, score, hook,
-caption, timing per clip).
+caption, timing per clip). All runs record to the JSON store under `data/state/`.
+
+### Safety
+Publishing is **dry-run by default** — nothing is posted. A live upload requires
+both `--mode live` and `CLIPFARM_PUBLISH_LIVE=1`, and defaults to `private`.
+TikTok/Instagram are inert until an account is connected.
 
 ## Configuration
 No secrets are committed. The LLM client reads `LLM_BASE_URL` / `LLM_API_KEY` /
@@ -43,10 +58,15 @@ are git-ignored.
 ## Requirements
 `node >= 20`, `ffmpeg`, `yt-dlp`, and an OpenAI-compatible LLM endpoint.
 
-## Roadmap
-Multi-platform Publisher (Shorts/TikTok/Reels), per-clip view & payout
-reconciliation, gradual multi-account management, and a control **Dashboard** that
-connects every account, shows analytics, and posts clips. See `docs/PLAN.md`.
+## Status
+- ✅ Engine: ingest → transcript (subs/Whisper) → LLM moment detection → vertical
+  forge with burned captions. Verified end-to-end.
+- ✅ Campaign Radar, JSON store spine, Publisher (dry-run), Payout Reconciler,
+  Orchestrator, unit tests.
+- ⏳ Live multi-account publishing (needs connected accounts), gradual account
+  management, and a project-specific control **Dashboard** (built last).
+
+See `docs/PLAN.md`.
 
 ## License
 Private / unreleased. Do not redistribute until a license is added.

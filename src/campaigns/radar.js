@@ -37,7 +37,15 @@ export function parseBoard(md) {
     const remaining = Math.max(0, total - paid);
     campaigns.push({ title, cpm, paid, total, remaining, ...tag(title + ' ' + ctx) });
   }
-  return campaigns;
+  // Dedupe: the same card can match more than once (image alt-text repeats the
+  // "$paid/$total ... $CPM" trio). Key on title+total+cpm; drop untitled noise.
+  const seen = new Map();
+  for (const c of campaigns) {
+    if (c.title === '(untitled)') continue;
+    const key = `${c.title}|${c.total}|${c.cpm}`;
+    if (!seen.has(key)) seen.set(key, c);
+  }
+  return [...seen.values()];
 }
 
 // Rank by opportunity: high CPM AND meaningful budget left to actually capture.
