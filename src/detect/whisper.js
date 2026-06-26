@@ -41,22 +41,47 @@ async function getAsr() {
   if (_asr) return _asr;
   const { pipeline, env } = await loadTransformers();
   env.allowLocalModels = true; // cache weights under node_modules/.cache
-  const model = process.env.WHISPER_MODEL || 'Xenova/whisper-tiny.en';
+  // Default is MULTILINGUAL (whisper-base) so Hebrew/other-language sources work.
+  // Override with WHISPER_MODEL (e.g. Xenova/whisper-tiny.en for English-only speed).
+  const model = process.env.WHISPER_MODEL || 'Xenova/whisper-base';
   log.step('whisper: loading model', { model });
   _asr = await pipeline('automatic-speech-recognition', model);
   return _asr;
 }
 
-// Returns [{start,end,text}] segments.
+// Group word-level chunks into ~phrase segments for the moment ranker.
+function wordsToSegments(words, maxGap = 0.8, maxLen = 6) {
+  const segs = [];
+  let cur = null;
+  for (const w of words) {
+    if (!cur || w.start - cur.end > maxGap || cur._n >= maxLen) {
+      cur = { start: w.start, end: w.end, text: w.text, _n: 1 };
+      segs.push(cur);
+    } else { cur.end = w.end; cur.text += ' ' + w.text; cur._n++; }
+  }
+  return segs.map(({ _n, ...s }) => ({ ...s, text: s.text.trim() }));
+}
+
+// Returns { segments:[{start,end,text}], words:[{start,end,text}] }.
 export async function transcribe(videoPath) {
   const asr = await getAsr();
   const audio = await decodePcm(videoPath);
   log.step('whisper: transcribing', { samples: audio.length, secs: Math.round(audio.length / 16000) });
-  const out = await asr(audio, { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true });
+  const opts = { chunk_length_s: 30, stride_length_s: 5, return_timestamps: 'word' };
+  if (process.env.WHISPER_LANGUAGE) opts.language = process.env.WHISPER_LANGUAGE;
+  let out;
+  try { out = await asr(audio, opts); }
+  catch { out = await asr(audio, { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true }); }
+
   const chunks = out?.chunks || [];
-  const segs = chunks
+  const words = chunks
     .filter((c) => c.timestamp && c.text?.trim())
-    .map((c) => ({ start: c.timestamp[0] ?? 0, end: c.timestamp[1] ?? (c.timestamp[0] + 2), text: c.text.trim() }));
-  if (!segs.length && out?.text) segs.push({ start: 0, end: audio.length / 16000, text: out.text.trim() });
-  return segs;
+    .map((c) => ({ start: c.timestamp[0] ?? 0, end: c.timestamp[1] ?? ((c.timestamp[0] ?? 0) + 0.4), text: c.text.trim() }));
+
+  // word-mode → derive phrase segments; sentence-mode → chunks already are segments
+  const looksWordLevel = words.length && words.every((w) => (w.end - w.start) <= 2.2);
+  const segments = looksWordLevel ? wordsToSegments(words)
+    : words.map((w) => ({ start: w.start, end: w.end, text: w.text }));
+  if (!segments.length && out?.text) segments.push({ start: 0, end: audio.length / 16000, text: out.text.trim() });
+  return { segments, words: looksWordLevel ? words : null };
 }

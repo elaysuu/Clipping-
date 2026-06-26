@@ -17,8 +17,10 @@ export async function processSource(src, {
   const source = await ingest(src);
   upsert('sources', { id: source.id, url: source.url, videoPath: source.videoPath, ingestedAt: new Date().toISOString() });
 
-  const segs = await getTranscript(source);
-  if (!segs) { const e = new Error('no transcript (no subs + whisper unavailable)'); e.code = 'NO_TRANSCRIPT'; throw e; }
+  const transcript = await getTranscript(source);
+  if (!transcript) { const e = new Error('no transcript (no subs + whisper unavailable)'); e.code = 'NO_TRANSCRIPT'; throw e; }
+  const segs = transcript.segments;
+  const words = transcript.words;
 
   const moments = await detectMoments(segs, { top });
   if (!moments.length) { const e = new Error('no moments detected'); e.code = 'NO_MOMENTS'; throw e; }
@@ -37,7 +39,7 @@ export async function processSource(src, {
       if (captions) {
         try {
           const ap = join(outDir, `clip_${rank}.ass`);
-          const { count } = buildCaptions(segs, { start: m.start, end: m.end }, ap);
+          const { count } = buildCaptions(segs, { start: m.start, end: m.end }, ap, { words });
           if (count > 0) assPath = ap;
         } catch (e) { log.warn('captions failed', { rank, err: e.message }); }
       }

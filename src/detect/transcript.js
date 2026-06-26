@@ -40,17 +40,18 @@ export function parseVtt(vttPath) {
   return out;
 }
 
-// Returns [{start,end,text}] or null if no transcript could be produced.
+// Returns { segments:[{start,end,text}], words:[…]|null } or null if none.
+// words (when present) drive word-by-word "karaoke" captions; subs give no words.
 export async function getTranscript({ subsPath, videoPath }) {
   if (subsPath && fs.existsSync(subsPath)) {
-    const segs = parseVtt(subsPath);
-    if (segs.length) { log.info('transcript: from subs', { segs: segs.length }); return segs; }
+    const segments = parseVtt(subsPath);
+    if (segments.length) { log.info('transcript: from subs', { segs: segments.length }); return { segments, words: null }; }
   }
   // fallback to whisper (loaded lazily — heavy dep)
   try {
     const { transcribe } = await import('./whisper.js');
-    const segs = await transcribe(videoPath);
-    if (segs?.length) { log.info('transcript: from whisper', { segs: segs.length }); return segs; }
+    const t = await transcribe(videoPath);
+    if (t?.segments?.length) { log.info('transcript: from whisper', { segs: t.segments.length, words: t.words?.length || 0 }); return t; }
   } catch (e) {
     log.warn('transcript: whisper unavailable', { err: e.message });
   }
