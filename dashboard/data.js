@@ -84,7 +84,10 @@ export function publishView() {
   const accounts = listAccounts();
   const posts = read('posts');
   const scheduled = posts.filter((p) => p.status === 'planned' || p.status === 'dry-run');
-  return { approved, candidates, accounts, scheduled, totalPosts: posts.length };
+  const nonCompliant = posts.filter((p) => p.compliant === false);
+  const campaigns = new Map(read('campaigns').map((c) => [c.id, c]));
+  const submissions = read('submissions').map((s) => ({ ...s, campaign: campaigns.get(s.campaignId)?.title || s.campaignId }));
+  return { approved, candidates, accounts, scheduled, nonCompliant, submissions, totalPosts: posts.length };
 }
 
 export function channelsView() {

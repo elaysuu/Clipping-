@@ -6,6 +6,7 @@ import { publishClipMulti } from '../src/publish/index.js';
 import { recordMetric } from '../src/reconcile/metrics.js';
 import { syncYouTubeMetrics } from '../src/reconcile/sync.js';
 import { createChannel, updateChannel } from '../src/channels/index.js';
+import { setSubmissionStatus } from '../src/campaigns/compliance.js';
 import { log } from '../src/core/log.js';
 
 // GET /accounts/connect?appId=  → bounce to Google consent
@@ -75,6 +76,9 @@ export const POST = {
     recordMetric(b.postId, { views: Number(b.views) || 0, likes: Number(b.likes) || 0, comments: Number(b.comments) || 0 });
     return '/analytics';
   },
+
+  // Update a payout submission's status (submitted → approved → paid).
+  '/submissions/status': (b) => { setSubmissionStatus(b.id, b.status); return '/publish'; },
 
   // Pull real view counts from YouTube for posted clips (needs a connected account).
   '/metrics/sync': async () => {

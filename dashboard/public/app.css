@@ -112,3 +112,11 @@ code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-size:13px}
 .sub{font-size:13px;color:var(--muted);margin:0 0 10px;font-weight:600}
 .chan .grid-2{gap:24px}
 .chan h2 .chip{vertical-align:middle;margin-left:6px;font-size:11px;text-transform:capitalize}
+
+/* compliance + submissions */
+.warn-text{color:#ffb36b;font-size:12px}
+.s-submitted{background:rgba(122,162,255,.16);color:var(--accent2)}
+.s-approved{background:rgba(92,242,182,.16);color:var(--accent)}
+.s-paid{background:rgba(92,242,182,.28);color:var(--accent);font-weight:700}
+.s-rejected{background:rgba(255,107,107,.16);color:#ff8f8f}
+.s-draft,.s-ready{background:rgba(138,151,177,.16);color:var(--muted)}

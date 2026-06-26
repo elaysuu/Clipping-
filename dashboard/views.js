@@ -149,7 +149,22 @@ export function publishPage(d) {
       <form method="post" action="/publish/plan"><input type="hidden" name="platforms" value="youtube,tiktok,instagram">
         <button class="btn primary" ${d.approved.length ? '' : 'disabled'}>Plan dry-run for ${d.approved.length} approved</button></form></div>
       <p class="muted small">Dry-run is the default. Live upload also requires <code>CLIPFARM_PUBLISH_LIVE=1</code> + per-account live toggle.</p>
-      ${sched}</section>`);
+      ${sched}</section>
+    ${(d.nonCompliant && d.nonCompliant.length) ? `<section class="card"><h2>⚠ Compliance warnings</h2>
+      <table class="tbl"><thead><tr><th>Clip</th><th>Platform</th><th>Violations</th></tr></thead><tbody>
+      ${d.nonCompliant.slice(0, 20).map((p) => `<tr><td>${esc(p.title || p.clipId)}</td><td>${esc(p.platform)}</td><td class="warn-text">${esc((p.violations || []).map((v) => v.rule + ': ' + v.detail).join('; '))}</td></tr>`).join('')}</tbody></table>
+      <p class="muted small">A clip that breaks a campaign's rules earns $0 — fix before going live.</p></section>` : ''}
+    <section class="card"><h2>Payout submissions</h2>
+      ${(d.submissions && d.submissions.length)
+        ? `<table class="tbl"><thead><tr><th>Campaign</th><th>URL</th><th>Status</th><th></th></tr></thead><tbody>
+           ${d.submissions.map((s) => `<tr><td>${esc(s.campaign)}</td><td class="muted">${esc((s.url || '').slice(0, 40))}</td>
+             <td><span class="status s-${esc(s.status)}">${esc(s.status)}</span></td>
+             <td><form method="post" action="/submissions/status" style="display:flex;gap:6px">
+               <input type="hidden" name="id" value="${esc(s.id)}">
+               <select name="status"><option>submitted</option><option>approved</option><option>paid</option><option>rejected</option></select>
+               <button class="btn">Set</button></form></td></tr>`).join('')}</tbody></table>`
+        : '<p class="empty">No payout submissions yet. Posting a live clip under a campaign registers it here for attribution.</p>'}
+    </section>`);
 }
 
 export function channelsPage(d) {
