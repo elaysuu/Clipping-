@@ -7,6 +7,7 @@ import { ingest } from '../src/ingest/download.js';
 import { getTranscript } from '../src/detect/transcript.js';
 import { detectMoments } from '../src/detect/moments.js';
 import { forgeClip } from '../src/forge/clip.js';
+import { buildCaptions } from '../src/forge/captions.js';
 import { PATHS, CFG } from '../src/core/config.js';
 import { log } from '../src/core/log.js';
 
@@ -23,6 +24,7 @@ async function main() {
   const top = Number(arg('top', CFG.topMoments));
   const reframe = arg('reframe', 'fill');
   const render = arg('no-render', false) ? false : true;
+  const captions = arg('no-captions', false) ? false : true;
 
   const source = await ingest(src);
 
@@ -45,7 +47,15 @@ async function main() {
     const outPath = join(outDir, `clip_${rank}.mp4`);
     let forged = null;
     if (render) {
-      try { forged = await forgeClip({ videoPath: source.videoPath, start: m.start, end: m.end, outPath, reframe }); }
+      let assPath = null;
+      if (captions) {
+        try {
+          const ap = join(outDir, `clip_${rank}.ass`);
+          const { count } = buildCaptions(segs, { start: m.start, end: m.end }, ap);
+          if (count > 0) assPath = ap;
+        } catch (e) { log.warn('captions failed', { rank, err: e.message }); }
+      }
+      try { forged = await forgeClip({ videoPath: source.videoPath, start: m.start, end: m.end, outPath, reframe, assPath }); }
       catch (e) { log.error('forge failed', { rank, err: e.message }); }
     }
     manifest.clips.push({ rank: i + 1, ...m, file: forged ? outPath : null, dur: +(m.end - m.start).toFixed(2) });
