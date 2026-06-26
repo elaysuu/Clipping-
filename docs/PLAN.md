@@ -36,9 +36,17 @@ The money is in **campaign selection + clip quality + volume**, NOT account coun
 
 ## Phasing — gate each on a REAL number, not a feeling
 - **P0 Validation (Elay-in-loop):** join board, pick 1 campaign, post manual clips → **first real $1.** Only Elay can open the payout account.
-- **P1 Core engine (BUILDING NOW):** Ingest → Detect → Forge → ready-to-post clips. 100% free, 0 risk.
+- **P1 Core engine ✅ DONE+verified:** Ingest → Transcript → Detect → Forge(+captions) → ready-to-post clips. 100% free, 0 risk.
 - **P2 Publisher + Reconciler:** auto-post 1 account × 3 platforms + view/payout tracking.
 - **P3 Careful replication ("army"):** Account Manager, gradual accounts w/ safety, more niches.
+- **P4 Control Dashboard (Elay's explicit ask 2026-06-26):** one universal UI to manage everything —
+  connected to EACH social account, full analytics/segmentation, control + edit + replay the data,
+  and post clips automatically from the interface. This is the final, manage-it-all layer.
+
+## Repo + public-readiness (Elay 2026-06-26)
+- Remote: `git@github.com:elaysuu/Clipping-.git` (Elay's dedicated repo). Push auth verified.
+- **May go PUBLIC depending on results** → secret hygiene is a hard rule: NO secret ever committed.
+  LLM creds read from env / borrowed from `Youtubeauto/.env` at runtime; `.env`,`data/`,`logs/` git-ignored.
 
 ## Owner judgment / honesty
 - A 50-account auto-poster for free is a ban magnet. Engine built fully; "army" scaled gradually after a proven dollar.
