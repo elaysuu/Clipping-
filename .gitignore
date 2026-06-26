@@ -1,5 +1,13 @@
 node_modules/
 data/
 logs/
-.env
 *.log
+
+# secrets — never commit, even encrypted (defense in depth)
+.env*
+.clipfarm/
+data/state/credentialVault*.json
+data/secrets/
+sessions/
+oauth-debug*.json
+*.key
