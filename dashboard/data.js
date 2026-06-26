@@ -87,7 +87,8 @@ export function publishView() {
   const nonCompliant = posts.filter((p) => p.compliant === false);
   const campaigns = new Map(read('campaigns').map((c) => [c.id, c]));
   const submissions = read('submissions').map((s) => ({ ...s, campaign: campaigns.get(s.campaignId)?.title || s.campaignId }));
-  return { approved, candidates, accounts, scheduled, nonCompliant, submissions, totalPosts: posts.length };
+  const queued = read('schedules').filter((s) => s.status === 'queued').length;
+  return { approved, candidates, accounts, scheduled, nonCompliant, submissions, queued, totalPosts: posts.length };
 }
 
 export function channelsView() {

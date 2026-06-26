@@ -7,6 +7,7 @@ import { recordMetric } from '../src/reconcile/metrics.js';
 import { syncYouTubeMetrics } from '../src/reconcile/sync.js';
 import { createChannel, updateChannel } from '../src/channels/index.js';
 import { setSubmissionStatus } from '../src/campaigns/compliance.js';
+import { enqueueApproved } from '../src/publish/scheduler.js';
 import { log } from '../src/core/log.js';
 
 // GET /accounts/connect?appId=  → bounce to Google consent
@@ -64,6 +65,9 @@ export const POST = {
     for (const clip of approved) await publishClipMulti(clip.id, { platforms, mode: 'dry-run' });
     return '/publish?ok=planned';
   },
+
+  // Queue approved clips → matching channels (worker cron drains respecting cadence).
+  '/publish/enqueue': () => { const n = enqueueApproved(); return `/publish?ok=queued_${n}`; },
 
   // Toggle an account's live-enabled flag (UI affordance; live still env-gated).
   '/accounts/live': (b) => {

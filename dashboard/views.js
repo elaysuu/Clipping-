@@ -146,8 +146,11 @@ export function publishPage(d) {
       <div class="kpi"><div class="kpi-v">${d.scheduled.length}</div><div class="kpi-l">Scheduled/dry-run</div></div></div>
     <section class="card"><h2>Account lanes</h2>${lanes}</section>
     <section class="card"><div class="card-head"><h2>Plan posts</h2>
-      <form method="post" action="/publish/plan"><input type="hidden" name="platforms" value="youtube,tiktok,instagram">
-        <button class="btn primary" ${d.approved.length ? '' : 'disabled'}>Plan dry-run for ${d.approved.length} approved</button></form></div>
+      <div style="display:flex;gap:10px">
+        <form method="post" action="/publish/enqueue"><button class="btn" ${d.approved.length ? '' : 'disabled'}>Queue ${d.approved.length} → matching channels (${d.queued || 0} queued)</button></form>
+        <form method="post" action="/publish/plan"><input type="hidden" name="platforms" value="youtube,tiktok,instagram">
+        <button class="btn primary" ${d.approved.length ? '' : 'disabled'}>Plan dry-run for ${d.approved.length} approved</button></form></div></div>
+      <p class="muted small">Queue routes each approved clip to the connected channel whose niche fits, then the <code>worker</code> cron drains it respecting per-account cadence.</p>
       <p class="muted small">Dry-run is the default. Live upload also requires <code>CLIPFARM_PUBLISH_LIVE=1</code> + per-account live toggle.</p>
       ${sched}</section>
     ${(d.nonCompliant && d.nonCompliant.length) ? `<section class="card"><h2>⚠ Compliance warnings</h2>
