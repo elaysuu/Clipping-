@@ -73,12 +73,26 @@ CLIPFARM_VAULT_KEY=$(openssl rand -hex 32) npm run dashboard   # http://127.0.0.
 - **Publish** — account lanes, dry-run planner, gated live.
 - **Analytics** — segmented earnings, YouTube view sync.
 
+## Autonomy (worker)
+Run the worker on a cron — it refreshes the board (best-effort), routes approved
+clips to each channel's best-matching niche, and drains the queue respecting
+per-account cadence (daily cap + min gap + jitter):
+```cron
+*/15 * * * * cd /home/ops/clipfarm && CLIPFARM_VAULT_KEY=… node bin/worker.js >> logs/worker.log 2>&1
+```
+
+## Quality + money features
+- **Speaker-aware crop** — detects the dominant person and crops 9:16 around them.
+- **Word-by-word karaoke captions** — each word highlights as spoken; multilingual.
+- **Campaign compliance** — checks each clip vs the campaign's rules (a rule-breaking
+  clip earns $0) and tracks payout **submissions** (submitted→approved→paid).
+
 ## Status
-- ✅ Engine, Campaign Radar, store, Publisher (dry-run), Reconciler, Orchestrator.
-- ✅ Dashboard D1–D6 + credential vault (AES-256-GCM) + OAuth + per-channel topics.
-- ✅ 15 unit tests; key flows verified end-to-end + visually.
-- ⏳ Needs the operator: a Whop/Content-Rewards payout account and a Google Cloud
-  OAuth app per channel to connect real channels and enable live uploads.
+- ✅ Engine, Radar, store, Publisher (dry-run), Reconciler, Orchestrator, Worker.
+- ✅ Dashboard (8 screens) + vault (AES-256-GCM) + OAuth + per-channel topics/research.
+- ✅ Compliance, speaker-crop, karaoke captions, cadence scheduler. 22 unit tests.
+- ⏳ Needs the operator: a Whop/Content-Rewards payout account + a Google Cloud OAuth
+  app per channel to connect real channels and enable live uploads.
 
 See `docs/PLAN.md` and `docs/dashboard-design-FINAL.md`.
 
