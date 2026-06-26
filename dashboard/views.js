@@ -165,6 +165,9 @@ export function settingsPage(d) {
 
 export function analyticsPage(a) {
   const body = `${kpiCards({ earned: a.totals.earned, views: a.totals.views, posts: a.totals.posts, clips: '', campaigns: '', sources: '' })}
+    <section class="card"><div class="card-head"><h2>Sync</h2>
+      <form method="post" action="/metrics/sync"><button class="btn">⟳ Sync YouTube views</button></form></div>
+      <p class="muted small">Pulls real view counts for posted YouTube clips (needs a connected channel). Manual entry also available per post.</p></section>
     <section class="card"><h2>By campaign</h2>
     ${a.byCampaign.length ? `<table class="tbl"><thead><tr><th>Campaign</th><th>Posts</th><th>Views</th><th>CPM</th><th>Earned</th></tr></thead><tbody>
       ${a.byCampaign.map((c) => `<tr><td>${esc(c.campaign)}</td><td>${num(c.posts)}</td><td>${num(c.views)}</td><td>$${c.cpm}/1K</td><td class="accent">${money(c.earned)}</td></tr>`).join('')}</tbody></table>`

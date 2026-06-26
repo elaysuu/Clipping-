@@ -4,6 +4,7 @@ import { addOAuthApp, beginConnect, completeConnect } from '../src/accounts/inde
 import { read, upsert } from '../src/core/store.js';
 import { publishClipMulti } from '../src/publish/index.js';
 import { recordMetric } from '../src/reconcile/metrics.js';
+import { syncYouTubeMetrics } from '../src/reconcile/sync.js';
 import { log } from '../src/core/log.js';
 
 // GET /accounts/connect?appId=  → bounce to Google consent
@@ -63,5 +64,11 @@ export const POST = {
   '/metrics/record': (b) => {
     recordMetric(b.postId, { views: Number(b.views) || 0, likes: Number(b.likes) || 0, comments: Number(b.comments) || 0 });
     return '/analytics';
+  },
+
+  // Pull real view counts from YouTube for posted clips (needs a connected account).
+  '/metrics/sync': async () => {
+    try { const r = await syncYouTubeMetrics(); return `/analytics?ok=synced_${r.synced}`; }
+    catch (e) { log.error('sync failed', { err: e.message }); return '/analytics?err=sync'; }
   },
 };
