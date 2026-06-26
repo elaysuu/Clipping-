@@ -10,7 +10,7 @@ import { log } from '../core/log.js';
 // Reframe strategies:
 //  - 'fill'  : scale to cover then center-crop (best for action / centered subject)
 //  - 'blur'  : contain the source, fill the bars with a blurred copy (keeps full frame)
-function reframeFilter(mode, w, h) {
+function reframeFilter(mode, w, h, frac = null) {
   if (mode === 'blur') {
     return [
       `[0:v]split=2[bg][fg]`,
@@ -19,7 +19,12 @@ function reframeFilter(mode, w, h) {
       `[bgb][fgs]overlay=(W-w)/2:(H-h)/2[v]`,
     ].join(';');
   }
-  // default: fill
+  // speaker-aware: crop the 9:16 window around the detected subject's x-center
+  if (mode === 'smart' && frac != null) {
+    const x = `clip(in_w*${frac.toFixed(4)}-${w / 2}\\,0\\,in_w-${w})`;
+    return `[0:v]scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h}:'${x}':0[v]`;
+  }
+  // default: fill (centered)
   return `[0:v]scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h}[v]`;
 }
 
@@ -35,7 +40,14 @@ export async function forgeClip({
   if (dur <= 0) throw new Error(`forge: bad window ${start}->${end}`);
   fs.mkdirSync(join(outPath, '..'), { recursive: true });
 
-  let vfilter = reframeFilter(reframe, CFG.outW, CFG.outH);
+  // speaker-aware crop: detect the subject's x-center (falls back to center)
+  let frac = null;
+  if (reframe === 'smart') {
+    try { const { subjectXFraction } = await import('./smartcrop.js'); frac = await subjectXFraction(videoPath, start, end); }
+    catch (e) { log.warn('forge: smartcrop failed, centering', { err: e.message }); }
+  }
+
+  let vfilter = reframeFilter(reframe, CFG.outW, CFG.outH, frac);
   let map = '[v]';
   if (assPath) {
     // chain subtitles onto the reframed stream

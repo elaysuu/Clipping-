@@ -12,7 +12,7 @@ import { upsert } from './store.js';
 import { log } from './log.js';
 
 export async function processSource(src, {
-  campaignId = null, top = CFG.topMoments, reframe = 'fill', captions = true, render = true,
+  campaignId = null, top = CFG.topMoments, reframe = 'smart', captions = true, render = true,
 } = {}) {
   const source = await ingest(src);
   upsert('sources', { id: source.id, url: source.url, videoPath: source.videoPath, ingestedAt: new Date().toISOString() });

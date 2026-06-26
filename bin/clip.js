@@ -18,7 +18,7 @@ async function main() {
   const { clips, outDir } = await processSource(src, {
     campaignId: arg('campaign', null) || null,
     top: Number(arg('top', CFG.topMoments)),
-    reframe: arg('reframe', 'fill'),
+    reframe: arg('reframe', 'smart'),
     captions: !arg('no-captions', false),
     render: !arg('no-render', false),
   });
