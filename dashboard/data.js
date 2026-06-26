@@ -5,6 +5,8 @@ import { reconcile } from '../src/reconcile/payouts.js';
 import { latestByPost } from '../src/reconcile/metrics.js';
 import { listApps, listAccounts } from '../src/accounts/index.js';
 import { isUnlocked } from '../src/vault/index.js';
+import { listChannels, NICHE_PRESETS } from '../src/channels/index.js';
+import { matchCampaigns } from '../src/channels/match.js';
 
 export function overview() {
   const r = reconcile();
@@ -83,6 +85,28 @@ export function publishView() {
   const posts = read('posts');
   const scheduled = posts.filter((p) => p.status === 'planned' || p.status === 'dry-run');
   return { approved, candidates, accounts, scheduled, totalPosts: posts.length };
+}
+
+export function channelsView() {
+  const accounts = new Map(read('accounts').map((a) => [a.id, a]));
+  const clips = read('clips');
+  const posts = read('posts');
+  const latest = latestByPost();
+  return {
+    niches: NICHE_PRESETS,
+    accounts: listAccounts(),
+    channels: listChannels().map((ch) => {
+      // performance of clips routed to this channel's campaigns/niche
+      const chPosts = posts.filter((p) => p.accountId && p.accountId === ch.accountId);
+      const views = chPosts.reduce((s, p) => s + (latest.get(p.id)?.views ?? 0), 0);
+      return {
+        ...ch,
+        account: ch.accountId ? accounts.get(ch.accountId) || null : null,
+        research: matchCampaigns(ch, { limit: 6 }),
+        stats: { posts: chPosts.length, views, clips: clips.filter((c) => c.channelId === ch.id).length },
+      };
+    }),
+  };
 }
 
 export function settingsView() {

@@ -39,6 +39,7 @@ function parseBody(req) {
 const GET = {
   '/': () => views.overviewPage(data.overview()),
   '/campaigns': () => views.campaignsPage(data.campaigns()),
+  '/channels': () => views.channelsPage(data.channelsView()),
   '/studio': () => views.studioPage(data.clipsBySource()),
   '/analytics': () => views.analyticsPage(data.analytics()),
   '/accounts': () => views.accountsPage(data.accountsView()),

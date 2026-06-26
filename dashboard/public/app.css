@@ -107,3 +107,8 @@ code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-size:13px}
 .clip-actions{display:flex;gap:8px;margin-top:8px}
 .clip-actions select{background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:6px;font-size:12px;flex:1}
 .clip-actions button{background:var(--accent);color:#06281c;border:none;border-radius:7px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px}
+
+/* channels */
+.sub{font-size:13px;color:var(--muted);margin:0 0 10px;font-weight:600}
+.chan .grid-2{gap:24px}
+.chan h2 .chip{vertical-align:middle;margin-left:6px;font-size:11px;text-transform:capitalize}

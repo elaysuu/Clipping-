@@ -5,6 +5,7 @@ import { read, upsert } from '../src/core/store.js';
 import { publishClipMulti } from '../src/publish/index.js';
 import { recordMetric } from '../src/reconcile/metrics.js';
 import { syncYouTubeMetrics } from '../src/reconcile/sync.js';
+import { createChannel, updateChannel } from '../src/channels/index.js';
 import { log } from '../src/core/log.js';
 
 // GET /accounts/connect?appId=  → bounce to Google consent
@@ -34,6 +35,15 @@ export const POST = {
   '/accounts/app': (b) => {
     addOAuthApp({ provider: 'youtube', label: b.label, clientId: b.clientId, clientSecret: b.clientSecret, redirectUri: b.redirectUri });
     return '/accounts?ok=app_added';
+  },
+
+  // Create a channel profile (a "page" with its own topic/niche).
+  '/channels/new': (b) => { createChannel({ name: b.name, niche: b.niche, topics: b.topics }); return '/channels?ok=created'; },
+
+  // Update a channel's niche/topics/notes + link to a connected account.
+  '/channels/profile': (b) => {
+    updateChannel(b.id, { name: b.name, niche: b.niche, topics: b.topics, notes: b.notes, accountId: b.accountId });
+    return '/channels';
   },
 
   // Edit a clip's hook/caption + set review status.

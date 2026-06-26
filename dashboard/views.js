@@ -6,6 +6,7 @@ const money = (n) => '$' + Number(n || 0).toLocaleString(undefined, { maximumFra
 const NAV = [
   { href: '/', label: 'Overview', icon: '◉', ready: true },
   { href: '/campaigns', label: 'Campaigns', icon: '◎', ready: true },
+  { href: '/channels', label: 'Channels', icon: '⌗', ready: true },
   { href: '/studio', label: 'Studio', icon: '✂', ready: true },
   { href: '/analytics', label: 'Analytics', icon: '▤', ready: true },
   { href: '/accounts', label: 'Accounts', icon: '⚇', ready: true },
@@ -149,6 +150,51 @@ export function publishPage(d) {
         <button class="btn primary" ${d.approved.length ? '' : 'disabled'}>Plan dry-run for ${d.approved.length} approved</button></form></div>
       <p class="muted small">Dry-run is the default. Live upload also requires <code>CLIPFARM_PUBLISH_LIVE=1</code> + per-account live toggle.</p>
       ${sched}</section>`);
+}
+
+export function channelsPage(d) {
+  const nicheOpts = (sel) => d.niches.map((n) => `<option value="${n}" ${n === sel ? 'selected' : ''}>${n}</option>`).join('');
+  const acctOpts = (sel) => ['<option value="">— not linked —</option>']
+    .concat(d.accounts.map((a) => `<option value="${esc(a.id)}" ${a.id === sel ? 'selected' : ''}>${esc(a.displayName || a.id)}</option>`)).join('');
+
+  const cards = d.channels.length
+    ? d.channels.map((ch) => `<section class="card chan">
+        <div class="card-head"><h2>${esc(ch.name)} <span class="chip">${esc(ch.niche)}</span></h2>
+          <span class="muted small">${ch.account ? '🔗 ' + esc(ch.account.displayName || ch.account.id) : 'not linked to a channel yet'}</span></div>
+        <div class="grid-2">
+          <div>
+            <form method="post" action="/channels/profile" class="form">
+              <input type="hidden" name="id" value="${esc(ch.id)}">
+              <label>Name <input name="name" value="${esc(ch.name)}"></label>
+              <label>Niche <select name="niche">${nicheOpts(ch.niche)}</select></label>
+              <label>Topics (comma-separated) <input name="topics" value="${esc((ch.topics || []).join(', '))}" placeholder="e.g. valorant, clutch, ranked"></label>
+              <label>Research notes <textarea name="notes" rows="2">${esc(ch.notes || '')}</textarea></label>
+              <label>Link to connected channel <select name="accountId">${acctOpts(ch.accountId)}</select></label>
+              <button class="btn primary">Save channel</button>
+            </form>
+            <p class="muted small">Posts ${ch.stats.posts} · Views ${num(ch.stats.views)}</p>
+          </div>
+          <div>
+            <h3 class="sub">Research — campaigns that fit this niche</h3>
+            ${ch.research.length
+              ? `<table class="tbl"><thead><tr><th>Fit</th><th>CPM</th><th>Remaining</th><th>Campaign</th></tr></thead><tbody>
+                 ${ch.research.map((c) => `<tr><td class="accent">${c.fit}</td><td>$${c.cpm}/1K</td><td>${money(c.remaining)}</td><td>${esc(c.title)}</td></tr>`).join('')}</tbody></table>`
+              : '<p class="empty">No matching campaigns. Run <code>node bin/radar.js</code> or broaden topics.</p>'}
+          </div>
+        </div></section>`).join('')
+    : `<p class="empty">No channels yet. Create one below — each page is its own topic/niche.</p>`;
+
+  return layout('/channels', 'Channels', `
+    <section class="card"><h2>New channel (topic / page)</h2>
+      <form method="post" action="/channels/new" class="form">
+        <label>Name <input name="name" placeholder="My Valorant Clips" required></label>
+        <label>Niche <select name="niche">${nicheOpts('general')}</select></label>
+        <label>Topics <input name="topics" placeholder="valorant, clutch, ranked"></label>
+        <button class="btn primary">Create channel</button>
+      </form>
+      <p class="muted small">Plan all your pages' topics here — even before connecting them. Each gets its own research feed + clip routing.</p>
+    </section>
+    ${cards}`);
 }
 
 export function settingsPage(d) {
