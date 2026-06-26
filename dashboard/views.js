@@ -8,9 +8,9 @@ const NAV = [
   { href: '/campaigns', label: 'Campaigns', icon: '◎', ready: true },
   { href: '/studio', label: 'Studio', icon: '✂', ready: true },
   { href: '/analytics', label: 'Analytics', icon: '▤', ready: true },
-  { href: '/accounts', label: 'Accounts', icon: '⚇', ready: false },
-  { href: '/publish', label: 'Publish', icon: '➤', ready: false },
-  { href: '/settings', label: 'Settings', icon: '⚙', ready: false },
+  { href: '/accounts', label: 'Accounts', icon: '⚇', ready: true },
+  { href: '/publish', label: 'Publish', icon: '➤', ready: true },
+  { href: '/settings', label: 'Settings', icon: '⚙', ready: true },
 ];
 
 export function layout(active, title, body) {
@@ -22,7 +22,7 @@ export function layout(active, title, body) {
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)} · ClipFarm</title><link rel="stylesheet" href="/public/app.css"></head>
 <body><aside class="sidebar"><div class="brand">🎬 ClipFarm</div><nav>${nav}</nav>
-<div class="sidebar-foot">read-only · D1</div></aside>
+<div class="sidebar-foot">localhost · D1–D5</div></aside>
 <main class="content"><header class="topbar"><h1>${esc(title)}</h1>
 <button id="refresh" title="Refresh">⟳</button></header>${body}</main>
 <script src="/public/app.js"></script></body></html>`;
@@ -73,17 +73,94 @@ export function campaignsPage(rows) {
 }
 
 export function studioPage(groups) {
+  const statusOpts = (s) => ['candidate', 'approved', 'rejected']
+    .map((o) => `<option value="${o}" ${(s || 'candidate') === o ? 'selected' : ''}>${o}</option>`).join('');
   const body = groups.length
     ? groups.map((g) => `<section class="card"><h2>Source <span class="muted">${esc(g.source.id)}</span></h2>
         <div class="clipgrid">${g.clips.map((c) => `
-          <div class="clipcard">
-            <div class="clip-rank">#${c.rank} <span class="accent">${c.score}</span></div>
-            <div class="clip-hook">${esc(c.hook || '')}</div>
-            <div class="clip-cap">${esc(c.caption || '')}</div>
+          <form class="clipcard" method="post" action="/studio/clip">
+            <input type="hidden" name="id" value="${esc(c.id)}">
+            <div class="clip-rank">#${c.rank} <span class="accent">${c.score}</span>
+              <span class="status s-${esc(c.status || 'candidate')}">${esc(c.status || 'candidate')}</span></div>
+            <input class="clip-edit" name="hook" value="${esc(c.hook || '')}" placeholder="hook">
+            <textarea class="clip-edit" name="caption" rows="2" placeholder="caption">${esc(c.caption || '')}</textarea>
             <div class="clip-meta muted">${c.dur}s · ${c.file ? 'rendered' : 'meta-only'}</div>
-          </div>`).join('')}</div></section>`).join('')
+            <div class="clip-actions"><select name="status">${statusOpts(c.status)}</select><button>Save</button></div>
+          </form>`).join('')}</div></section>`).join('')
     : `<p class="empty">No clips yet. Run <code>node bin/clip.js &lt;source&gt;</code>.</p>`;
   return layout('/studio', 'Studio', body);
+}
+
+export function accountsPage(d) {
+  const flag = d.vaultUnlocked
+    ? '<span class="chip ok">🔒 vault unlocked</span>'
+    : '<span class="chip warn">⚠ vault locked — set CLIPFARM_VAULT_KEY</span>';
+  const appsList = d.apps.length
+    ? d.apps.map((a) => `<tr><td>${esc(a.label)}</td><td class="muted">${esc(a.clientId)}</td><td><code>${esc(a.fingerprint)}</code></td>
+        <td><span class="status s-posted">${esc(a.status)}</span></td>
+        <td><a class="btn" href="/accounts/connect?appId=${esc(a.id)}">Connect channel →</a></td></tr>`).join('')
+    : `<tr><td colspan="5" class="muted">No OAuth apps yet. Add one per channel below.</td></tr>`;
+  const grid = d.accounts.length
+    ? `<div class="acctgrid">${d.accounts.map((a) => `<div class="acctcard">
+        <div class="acct-name">${esc(a.displayName || a.id)}</div>
+        <div class="muted">${esc(a.platform)} · ${esc(a.handle || '')}</div>
+        <div class="acct-row"><span class="status s-${a.connected ? 'posted' : 'needs-account'}">${a.connected ? 'connected' : a.status}</span>
+        <span class="muted">cap ${a.dailyCap}/day</span></div>
+        <form method="post" action="/accounts/live"><input type="hidden" name="id" value="${esc(a.id)}">
+          <input type="hidden" name="on" value="${a.liveEnabled ? '0' : '1'}">
+          <button class="btn ${a.liveEnabled ? 'live' : ''}">${a.liveEnabled ? '● LIVE enabled' : 'Enable live'}</button></form>
+      </div>`).join('')}</div>`
+    : `<p class="empty">No channels connected yet. Add an app and click "Connect channel".</p>`;
+  return layout('/accounts', 'Accounts', `
+    <section class="card"><div class="card-head"><h2>Connections</h2>${flag}</div>
+      <p class="muted">Each channel uses its <b>own</b> Client ID/Secret (avoids YouTube quota limits). Set your Google OAuth app's redirect URI to:</p>
+      <p><code>${esc(d.redirectUri)}</code></p>
+      <table class="tbl"><thead><tr><th>App</th><th>Client ID</th><th>Fingerprint</th><th>Status</th><th></th></tr></thead><tbody>${appsList}</tbody></table>
+    </section>
+    <section class="card"><h2>Add a channel app</h2>
+      <form method="post" action="/accounts/app" class="form">
+        <label>Label <input name="label" placeholder="Channel A" required></label>
+        <label>Client ID <input name="clientId" placeholder="…apps.googleusercontent.com" required></label>
+        <label>Client Secret <input name="clientSecret" type="password" placeholder="GOCSPX-…" required></label>
+        <input type="hidden" name="redirectUri" value="${esc(d.redirectUri)}">
+        <button class="btn primary">Save app</button>
+      </form>
+      <p class="muted small">⚠ Set the OAuth consent screen to <b>Published</b> (Testing mode expires refresh tokens after 7 days).</p>
+    </section>
+    <section class="card"><h2>Channels (${d.accounts.length})</h2>${grid}</section>`);
+}
+
+export function publishPage(d) {
+  const lanes = d.accounts.length
+    ? `<div class="lanes">${d.accounts.map((a) => `<div class="lane"><div class="lane-head">${esc(a.displayName || a.id)}<span class="muted"> ${esc(a.platform)}</span></div>
+        <div class="muted small">cap ${a.dailyCap}/day · ${a.liveEnabled ? 'live on' : 'dry-run'}</div></div>`).join('')}</div>`
+    : '<p class="muted">No accounts — connect channels first.</p>';
+  const sched = d.scheduled.length
+    ? `<table class="tbl"><thead><tr><th>Clip</th><th>Platform</th><th>Status</th></tr></thead><tbody>
+       ${d.scheduled.slice(0, 30).map((p) => `<tr><td>${esc(p.title || p.clipId)}</td><td>${esc(p.platform)}</td><td><span class="status s-${esc(p.status)}">${esc(p.status)}</span></td></tr>`).join('')}</tbody></table>`
+    : '<p class="empty">Nothing scheduled. Approve clips in Studio, then plan a dry-run.</p>';
+  return layout('/publish', 'Publish', `
+    <div class="kpis"><div class="kpi accent"><div class="kpi-v">${d.approved.length}</div><div class="kpi-l">Approved clips</div></div>
+      <div class="kpi"><div class="kpi-v">${d.accounts.length}</div><div class="kpi-l">Channels</div></div>
+      <div class="kpi"><div class="kpi-v">${d.scheduled.length}</div><div class="kpi-l">Scheduled/dry-run</div></div></div>
+    <section class="card"><h2>Account lanes</h2>${lanes}</section>
+    <section class="card"><div class="card-head"><h2>Plan posts</h2>
+      <form method="post" action="/publish/plan"><input type="hidden" name="platforms" value="youtube,tiktok,instagram">
+        <button class="btn primary" ${d.approved.length ? '' : 'disabled'}>Plan dry-run for ${d.approved.length} approved</button></form></div>
+      <p class="muted small">Dry-run is the default. Live upload also requires <code>CLIPFARM_PUBLISH_LIVE=1</code> + per-account live toggle.</p>
+      ${sched}</section>`);
+}
+
+export function settingsPage(d) {
+  return layout('/settings', 'Settings', `
+    <section class="card"><h2>Status</h2>
+      <div class="chips">
+        <span class="chip ${d.vaultUnlocked ? 'ok' : 'warn'}">vault ${d.vaultUnlocked ? 'unlocked' : 'locked'}</span>
+        <span class="chip ${d.llmConfigured ? 'ok' : 'warn'}">LLM ${d.llmConfigured ? 'configured' : 'missing'}</span>
+        <span class="chip ${d.liveGate ? 'warn' : 'ok'}">live gate ${d.liveGate ? 'OPEN' : 'closed (safe)'}</span>
+      </div></section>
+    <section class="card"><h2>Safety cadence (defaults)</h2>
+      <p class="muted">Per-account: max <b>${d.cadence.dailyCap}</b> posts/day, min <b>${d.cadence.minGapHours}h</b> gap, staggered, auto-pause on auth/rate-limit error. "Cadence-safe by local rules" — not a ban guarantee.</p></section>`);
 }
 
 export function analyticsPage(a) {

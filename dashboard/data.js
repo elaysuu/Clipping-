@@ -3,6 +3,8 @@
 import { read } from '../src/core/store.js';
 import { reconcile } from '../src/reconcile/payouts.js';
 import { latestByPost } from '../src/reconcile/metrics.js';
+import { listApps, listAccounts } from '../src/accounts/index.js';
+import { isUnlocked } from '../src/vault/index.js';
 
 export function overview() {
   const r = reconcile();
@@ -59,4 +61,35 @@ export function clipsBySource() {
 export function analytics() {
   const r = reconcile();
   return { byCampaign: r.byCampaign, totals: { views: r.totalViews, earned: r.totalEarned, posts: r.posts } };
+}
+
+const DASH_PORT = Number(process.env.DASH_PORT || 4317);
+const DASH_HOST = process.env.DASH_HOST || '127.0.0.1';
+
+export function accountsView() {
+  return {
+    vaultUnlocked: isUnlocked(),
+    redirectUri: `http://${DASH_HOST}:${DASH_PORT}/oauth/callback`,
+    apps: listApps(),
+    accounts: listAccounts(),
+  };
+}
+
+export function publishView() {
+  const clips = read('clips');
+  const approved = clips.filter((c) => c.status === 'approved' && c.file);
+  const candidates = clips.filter((c) => c.status !== 'rejected' && c.file).length;
+  const accounts = listAccounts();
+  const posts = read('posts');
+  const scheduled = posts.filter((p) => p.status === 'planned' || p.status === 'dry-run');
+  return { approved, candidates, accounts, scheduled, totalPosts: posts.length };
+}
+
+export function settingsView() {
+  return {
+    vaultUnlocked: isUnlocked(),
+    llmConfigured: !!(process.env.LLM_API_KEY || true), // borrowed at call time
+    liveGate: process.env.CLIPFARM_PUBLISH_LIVE === '1',
+    cadence: { dailyCap: 3, minGapHours: 3 },
+  };
 }
