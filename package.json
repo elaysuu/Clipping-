@@ -1,0 +1,13 @@
+{
+  "name": "clipfarm",
+  "version": "0.1.0",
+  "description": "Universal clipping engine — pay-per-view campaign clips, zero-budget toolchain.",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "bin": { "clip": "bin/clip.js" },
+  "scripts": {
+    "clip": "node bin/clip.js",
+    "test": "node --test tests/*.test.js"
+  }
+}
