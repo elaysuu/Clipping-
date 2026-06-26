@@ -8,17 +8,24 @@ import { dirname, join, normalize } from 'node:path';
 import * as data from './data.js';
 import * as views from './views.js';
 import * as actions from './actions.js';
+import * as auth from './auth.js';
 import { log } from '../src/core/log.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, 'public');
 const MIME = { '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml' };
 
+const SECURITY_HEADERS = {
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'DENY',
+  'referrer-policy': 'no-referrer',
+  'cache-control': 'no-store',
+};
 function send(res, code, body, type = 'text/html; charset=utf-8') {
-  res.writeHead(code, { 'content-type': type, 'cache-control': 'no-store' });
+  res.writeHead(code, { 'content-type': type, ...SECURITY_HEADERS });
   res.end(body);
 }
-function redirect(res, to) { res.writeHead(302, { location: to }); res.end(); }
+function redirect(res, to) { res.writeHead(302, { location: to, ...SECURITY_HEADERS }); res.end(); }
 
 function serveStatic(res, urlPath) {
   const rel = normalize(urlPath.replace(/^\/public\//, '')).replace(/^(\.\.[/\\])+/, '');
@@ -60,6 +67,20 @@ export function createServer() {
       const url = new URL(req.url, 'http://localhost');
       const path = url.pathname;
 
+      // --- auth gate (when CLIPFARM_PIN is set) ---
+      if (path === '/login') {
+        if (req.method === 'POST') {
+          const body = await parseBody(req);
+          if (auth.checkPin(body.pin)) { auth.newSession(res); return redirect(res, '/'); }
+          return send(res, 401, auth.loginPage('err'));
+        }
+        return send(res, 200, auth.loginPage());
+      }
+      if (path === '/logout') { auth.destroySession(req, res); return redirect(res, '/login'); }
+      if (!path.startsWith('/public/') && !auth.isAuthed(req)) {
+        return req.method === 'GET' ? redirect(res, '/login') : send(res, 401, 'auth required', 'text/plain');
+      }
+
       if (req.method === 'GET') {
         if (path.startsWith('/public/')) return serveStatic(res, path);
         if (API[path]) return send(res, 200, JSON.stringify(API[path](), null, 2), 'application/json');
@@ -86,6 +107,11 @@ export function createServer() {
 
 export function start({ port = Number(process.env.DASH_PORT || 4317), host = process.env.DASH_HOST || '127.0.0.1' } = {}) {
   const server = createServer();
-  server.listen(port, host, () => log.info('dashboard: listening', { url: `http://${host}:${port}` }));
+  server.listen(port, host, () => {
+    log.info('dashboard: listening', { url: `http://${host}:${port}`, auth: auth.authRequired() ? 'PIN' : 'OPEN' });
+    if (!auth.authRequired() && host !== '127.0.0.1' && host !== 'localhost') {
+      log.warn('dashboard: NO CLIPFARM_PIN set and bound to a non-localhost host — anyone reachable can access. Set CLIPFARM_PIN.');
+    }
+  });
   return server;
 }

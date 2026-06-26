@@ -118,6 +118,7 @@ export function settingsView() {
     vaultUnlocked: isUnlocked(),
     llmConfigured: !!(process.env.LLM_API_KEY || true), // borrowed at call time
     liveGate: process.env.CLIPFARM_PUBLISH_LIVE === '1',
+    pinSet: !!process.env.CLIPFARM_PIN,
     cadence: { dailyCap: 3, minGapHours: 3 },
   };
 }

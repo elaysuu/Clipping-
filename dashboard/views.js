@@ -220,9 +220,10 @@ export function settingsPage(d) {
     <section class="card"><h2>Status</h2>
       <div class="chips">
         <span class="chip ${d.vaultUnlocked ? 'ok' : 'warn'}">vault ${d.vaultUnlocked ? 'unlocked' : 'locked'}</span>
+        <span class="chip ${d.pinSet ? 'ok' : 'warn'}">dashboard ${d.pinSet ? 'PIN-locked' : 'OPEN (set CLIPFARM_PIN)'}</span>
         <span class="chip ${d.llmConfigured ? 'ok' : 'warn'}">LLM ${d.llmConfigured ? 'configured' : 'missing'}</span>
         <span class="chip ${d.liveGate ? 'warn' : 'ok'}">live gate ${d.liveGate ? 'OPEN' : 'closed (safe)'}</span>
-      </div></section>
+      </div>${d.pinSet ? '<a class="btn" href="/logout" style="margin-top:12px">Log out</a>' : ''}</section>
     <section class="card"><h2>Safety cadence (defaults)</h2>
       <p class="muted">Per-account: max <b>${d.cadence.dailyCap}</b> posts/day, min <b>${d.cadence.minGapHours}h</b> gap, staggered, auto-pause on auth/rate-limit error. "Cadence-safe by local rules" — not a ban guarantee.</p></section>`);
 }

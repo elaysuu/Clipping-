@@ -42,6 +42,19 @@ export function isUnlocked() {
   try { loadKey(); return true; } catch { return false; }
 }
 
+// Where is the master key coming from? (no key material exposed)
+export function keyInfo() {
+  if (process.env.CLIPFARM_VAULT_KEY) return { source: 'env', location: 'CLIPFARM_VAULT_KEY', present: true };
+  if (fs.existsSync(KEY_FILE)) return { source: 'file', location: KEY_FILE, present: true };
+  return { source: 'none', location: KEY_FILE, present: false };
+}
+
+// Explicit backup export — returns the key hex so the operator can store it in a
+// password manager. Sensitive: callers must gate behind an explicit user action.
+export function exportKeyHex() {
+  return loadKey().toString('hex');
+}
+
 export function encrypt(plaintext) {
   const key = loadKey();
   const iv = crypto.randomBytes(12);
