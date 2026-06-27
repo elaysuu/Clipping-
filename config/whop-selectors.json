@@ -1,0 +1,9 @@
+{
+  "submitButton": "button:has-text('Submit Video')",
+  "titleInput": "input[name='title']",
+  "linkInput": "input[name='videoLink']",
+  "imageInput": "input[type='file']",
+  "submitConfirm": "button[type='submit']",
+  "supportInput": "textarea[placeholder*='Message']",
+  "supportSend": "button[aria-label='Send']"
+}
