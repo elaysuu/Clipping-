@@ -7,6 +7,7 @@ import { refreshBoard } from '../src/campaigns/fetch.js';
 import { loadAndRank } from '../src/campaigns/radar.js';
 import { upsert } from '../src/core/store.js';
 import { enqueueApproved, tick } from '../src/publish/scheduler.js';
+import { submitTick } from '../src/submit/index.js';
 import { PATHS } from '../src/core/config.js';
 import { join } from 'node:path';
 import { log } from '../src/core/log.js';
@@ -30,6 +31,11 @@ async function main() {
   const r = await tick({ mode });
   log.info('worker: tick complete', { mode, ...r });
   console.log(`worker tick: posted=${r.posted} skipped=${r.skipped} mode=${mode}`);
+
+  // 3. advance Whop submissions through their human-gated state machine
+  const s = await submitTick({ live: process.env.CLIPFARM_SUBMIT_LIVE === '1' });
+  log.info('worker: submit tick complete', s);
+  console.log(`submit tick: advanced=${s.advanced} waiting=${s.waiting}`);
 }
 
 main().catch((e) => { log.error('worker crashed', { err: e.message }); process.exit(1); });
