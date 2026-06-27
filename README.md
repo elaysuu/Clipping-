@@ -96,5 +96,30 @@ per-account cadence (daily cap + min gap + jitter):
 
 See `docs/PLAN.md` and `docs/dashboard-design-FINAL.md`.
 
+## Whop / Content-Rewards Auto-Submit Bot
+
+Universal, data-driven submission to pay-per-view clipping campaigns. Each campaign
+is just a rules row (`src/campaigns/compliance.js` schema); nothing is creator-specific.
+
+**Flow (state machine, `src/submit/state.js`):** drafted → clip-compliant → posted →
+awaiting-analytics → analytics-captured → submitted → support-sent →
+(approved | rejected→resend) → paid.
+
+**Setup (one-time):**
+- Import logged-in cookies per identity into the encrypted session store
+  (`src/submit/session.js`, ciphertext-only via the vault).
+- Set `CLIPFARM_PROXY` to a residential proxy (recommended — a datacenter IP is
+  bot-check-prone). Without it the bot runs direct, with a logged warning.
+- Tune `config/whop-selectors.json` if Whop's UI changes (config edit, not code).
+
+**Run:** the worker advances submissions each tick.
+`CLIPFARM_VAULT_KEY=… CLIPFARM_SUBMIT_LIVE=1 npm run worker` (omit `CLIPFARM_SUBMIT_LIVE`
+for dry-run). Cron: `*/15 * * * * cd /home/ops/clipfarm && CLIPFARM_VAULT_KEY=… npm run worker`
+
+**Honest limits:** analytics screenshots need the real posted video's demographics
+(1–2 day lag, ≥ the campaign's Tier-1 %); Support-Chat review is human and may reject
+pending analytics (auto re-sent); AI-edit-banning campaigns route clips to human review
+instead of auto-posting.
+
 ## License
 Private / unreleased. Do not redistribute until a license is added.
